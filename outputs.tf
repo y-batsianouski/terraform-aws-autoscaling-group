@@ -3,7 +3,7 @@ output "launch_configuration" {
   value       = concat(aws_launch_configuration.this, [{}])[0]
 }
 
-output "launch_configuration" {
+output "launch_template" {
   description = "Launch template properties"
   value       = concat(aws_launch_template.this, [{}])[0]
 }
