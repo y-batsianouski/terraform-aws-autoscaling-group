@@ -350,6 +350,9 @@ resource "aws_autoscaling_group" "this" {
   service_linked_role_arn   = var.service_linked_role_arn != "" ? var.service_linked_role_arn : null
   max_instance_lifetime     = var.max_instance_lifetime != -1 ? var.max_instance_lifetime : null
 
+  load_balancers    = length(var.load_balancers) > 0 ? var.load_balancers : null
+  target_group_arns = length(var.target_group_arns) > 0 ? var.target_group_arns : null
+
   launch_configuration = var.use_launch_configuration ? element(aws_launch_configuration.this.*.name, 0) : null
   vpc_zone_identifier  = var.subnet_ids
 
