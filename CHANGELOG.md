@@ -17,3 +17,7 @@
 - Add possibility to override name for Launch Template or Launch Configuration
 - Add possibility to use name_prefix instead of name for Launch Template, Launch Configuration and AutoScaling group
 - Add possibility to pass additional tags for Launch Template and AutoScaling group
+
+## 0.2.1
+
+- FIX root block device behaviour

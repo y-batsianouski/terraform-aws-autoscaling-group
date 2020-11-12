@@ -8,7 +8,7 @@ locals {
     ["unsupported"]
   )) == 0 : var.lt_ebs_optimized
 
-  lt_root_block_device = length(keys(var.lt_root_block_device)) == 0 ? [] : [{
+  lt_root_block_device = length(keys(var.lt_root_block_device)) == 0 || var.lc_use == true ? [] : [{
     device_name  = data.aws_ami.this[0].root_device_name,
     virtual_name = lookup(var.lt_root_block_device, "virtual_name", null),
     no_device    = lookup(var.lt_root_block_device, "no_device", null),
@@ -23,7 +23,7 @@ locals {
     }
   }]
 
-  lt_block_device_mappings = concat(local.lt_root_block_device, var.lt_block_device_mappings)
+  lt_block_device_mappings = var.lt_block_device_mappings
 
   lt_network_interfaces = length(var.lt_network_interfaces) == 0 ? var.lt_associate_public_ip_address ? [{
     associate_public_ip_address = var.lt_associate_public_ip_address,
@@ -147,6 +147,27 @@ resource "aws_launch_template" "this" {
 
   dynamic "block_device_mappings" {
     for_each = local.lt_block_device_mappings
+    content {
+      device_name  = lookup(block_device_mappings.value, "device_name", null)
+      virtual_name = lookup(block_device_mappings.value, "virtual_name", null)
+      no_device    = lookup(block_device_mappings.value, "no_device", null)
+      dynamic "ebs" {
+        for_each = length(keys(lookup(block_device_mappings.value, "ebs", {}))) > 0 ? [lookup(block_device_mappings.value, "ebs", {})] : []
+        content {
+          delete_on_termination = lookup(ebs.value, "delete_on_termination", null)
+          encrypted             = lookup(ebs.value, "encrypted", null)
+          iops                  = lookup(ebs.value, "iops", null)
+          kms_key_id            = lookup(ebs.value, "volume_type", null)
+          snapshot_id           = lookup(ebs.value, "snapshot_id", null)
+          volume_size           = lookup(ebs.value, "volume_size", null)
+          volume_type           = lookup(ebs.value, "volume_type", null)
+        }
+      }
+    }
+  }
+
+  dynamic "block_device_mappings" {
+    for_each = local.lt_root_block_device
     content {
       device_name  = lookup(block_device_mappings.value, "device_name", null)
       virtual_name = lookup(block_device_mappings.value, "virtual_name", null)
