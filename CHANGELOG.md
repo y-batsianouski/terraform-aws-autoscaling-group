@@ -21,3 +21,7 @@
 ## 0.2.1
 
 - FIX root block device behaviour
+
+## 0.2.2
+
+- Set default values for delete_on_termination and encrypted arguments of EBS volume configurations

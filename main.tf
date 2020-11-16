@@ -13,8 +13,8 @@ locals {
     virtual_name = lookup(var.lt_root_block_device, "virtual_name", null),
     no_device    = lookup(var.lt_root_block_device, "no_device", null),
     ebs = data.aws_ami.this[0].root_device_type == "instance-store" ? {} : {
-      delete_on_termination = lookup(var.lt_root_block_device, "delete_on_termination", null),
-      encrypted             = lookup(var.lt_root_block_device, "encrypted", null),
+      delete_on_termination = lookup(var.lt_root_block_device, "delete_on_termination", false),
+      encrypted             = lookup(var.lt_root_block_device, "encrypted", false),
       iops                  = lookup(var.lt_root_block_device, "iops", null),
       kms_key_id            = lookup(var.lt_root_block_device, "volume_type", null),
       snapshot_id           = lookup(var.lt_root_block_device, "snapshot_id", null),
@@ -154,8 +154,8 @@ resource "aws_launch_template" "this" {
       dynamic "ebs" {
         for_each = length(keys(lookup(block_device_mappings.value, "ebs", {}))) > 0 ? [lookup(block_device_mappings.value, "ebs", {})] : []
         content {
-          delete_on_termination = lookup(ebs.value, "delete_on_termination", null)
-          encrypted             = lookup(ebs.value, "encrypted", null)
+          delete_on_termination = contains(keys(ebs.value), "delete_on_termination") ? ebs.value["delete_on_termination"] : true
+          encrypted             = contains(keys(ebs.value), "encrypted") ? ebs.value["encrypted"] : false
           iops                  = lookup(ebs.value, "iops", null)
           kms_key_id            = lookup(ebs.value, "volume_type", null)
           snapshot_id           = lookup(ebs.value, "snapshot_id", null)
@@ -175,8 +175,8 @@ resource "aws_launch_template" "this" {
       dynamic "ebs" {
         for_each = length(keys(lookup(block_device_mappings.value, "ebs", {}))) > 0 ? [lookup(block_device_mappings.value, "ebs", {})] : []
         content {
-          delete_on_termination = lookup(ebs.value, "delete_on_termination", null)
-          encrypted             = lookup(ebs.value, "encrypted", null)
+          delete_on_termination = contains(keys(ebs.value), "delete_on_termination") ? ebs.value["delete_on_termination"] : true
+          encrypted             = contains(keys(ebs.value), "encrypted") ? ebs.value["encrypted"] : false
           iops                  = lookup(ebs.value, "iops", null)
           kms_key_id            = lookup(ebs.value, "volume_type", null)
           snapshot_id           = lookup(ebs.value, "snapshot_id", null)
@@ -356,11 +356,11 @@ resource "aws_launch_configuration" "this" {
   dynamic "root_block_device" {
     for_each = length(keys(var.lt_root_block_device)) > 0 ? [var.lt_root_block_device] : []
     content {
-      delete_on_termination = lookup(root_block_device.value, "delete_on_termination", null)
+      delete_on_termination = contains(keys(root_block_device.value), "delete_on_termination") ? root_block_device.value["delete_on_termination"] : true
       iops                  = lookup(root_block_device.value, "iops", null)
       volume_size           = lookup(root_block_device.value, "volume_size", null)
       volume_type           = lookup(root_block_device.value, "volume_type", null)
-      encrypted             = lookup(root_block_device.value, "encrypted", null)
+      encrypted             = contains(keys(root_block_device.value), "encrypted") ? root_block_device.value["encrypted"] : false
     }
   }
 
@@ -368,8 +368,8 @@ resource "aws_launch_configuration" "this" {
     for_each = local.lc_ebs_block_devices
     content {
       device_name           = ebs_block_device.value["device_name"]
-      delete_on_termination = lookup(ebs_block_device.value, "delete_on_termination", null)
-      encrypted             = lookup(ebs_block_device.value, "encrypted", null)
+      delete_on_termination = contains(keys(ebs_block_device.value), "delete_on_termination") ? ebs_block_device.value["delete_on_termination"] : true
+      encrypted             = contains(keys(ebs_block_device.value), "encrypted") ? ebs_block_device.value["encrypted"] : false
       iops                  = lookup(ebs_block_device.value, "iops", null)
       no_device             = lookup(ebs_block_device.value, "no_device", null)
       snapshot_id           = lookup(ebs_block_device.value, "snapshot_id", null)
