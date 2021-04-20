@@ -25,3 +25,7 @@
 ## 0.2.2
 
 - Set default values for delete_on_termination and encrypted arguments of EBS volume configurations
+
+## 0.2.3
+
+- FIX typo in kms_key_id for EBS configuration

@@ -16,7 +16,7 @@ locals {
       delete_on_termination = lookup(var.lt_root_block_device, "delete_on_termination", false),
       encrypted             = lookup(var.lt_root_block_device, "encrypted", false),
       iops                  = lookup(var.lt_root_block_device, "iops", null),
-      kms_key_id            = lookup(var.lt_root_block_device, "volume_type", null),
+      kms_key_id            = lookup(var.lt_root_block_device, "kms_key_id", null),
       snapshot_id           = lookup(var.lt_root_block_device, "snapshot_id", null),
       volume_size           = lookup(var.lt_root_block_device, "volume_size", null),
       volume_type           = lookup(var.lt_root_block_device, "volume_type", null),
@@ -157,7 +157,7 @@ resource "aws_launch_template" "this" {
           delete_on_termination = contains(keys(ebs.value), "delete_on_termination") ? ebs.value["delete_on_termination"] : true
           encrypted             = contains(keys(ebs.value), "encrypted") ? ebs.value["encrypted"] : false
           iops                  = lookup(ebs.value, "iops", null)
-          kms_key_id            = lookup(ebs.value, "volume_type", null)
+          kms_key_id            = lookup(ebs.value, "kms_key_id", null)
           snapshot_id           = lookup(ebs.value, "snapshot_id", null)
           volume_size           = lookup(ebs.value, "volume_size", null)
           volume_type           = lookup(ebs.value, "volume_type", null)
@@ -178,7 +178,7 @@ resource "aws_launch_template" "this" {
           delete_on_termination = contains(keys(ebs.value), "delete_on_termination") ? ebs.value["delete_on_termination"] : true
           encrypted             = contains(keys(ebs.value), "encrypted") ? ebs.value["encrypted"] : false
           iops                  = lookup(ebs.value, "iops", null)
-          kms_key_id            = lookup(ebs.value, "volume_type", null)
+          kms_key_id            = lookup(ebs.value, "kms_key_id", null)
           snapshot_id           = lookup(ebs.value, "snapshot_id", null)
           volume_size           = lookup(ebs.value, "volume_size", null)
           volume_type           = lookup(ebs.value, "volume_type", null)
