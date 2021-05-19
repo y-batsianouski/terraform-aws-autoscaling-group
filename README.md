@@ -27,8 +27,7 @@ Only VPC AutoScaling groups supported.
 module "autoscaling-group" {
   source = "y-batsianouski/autoscaling-group/aws"
 
-  name       = "asg-with-launch-template"
-  subnet_ids = ["subnet-12345678", "subnet-87654321"]
+  name = "asg-with-launch-template"
 
   lt_description                 = "Launch Template for example AutoScaling group"
   lt_ebs_optimized_auto          = true
@@ -80,6 +79,7 @@ module "autoscaling-group" {
     }
   }
 
+  asg_subnet_ids        = ["subnet-12345678", "subnet-87654321"]
   asg_min_size          = 1
   asg_max_size          = 10
   asg_health_check_type = "EC2"
@@ -119,8 +119,7 @@ module "autoscaling-group" {
 module "autoscaling-group" {
   source = "y-batsianouski/autoscaling-group/aws"
 
-  name       = "asg-with-launch-configuration"
-  subnet_ids = ["subnet-12345678", "subnet-87654321"]
+  name = "asg-with-launch-configuration"
 
   lc_use = true
 
@@ -172,6 +171,7 @@ module "autoscaling-group" {
     }
   }
 
+  asg_subnet_ids        = ["subnet-12345678", "subnet-87654321"]
   asg_min_size          = 1
   asg_max_size          = 10
   asg_health_check_type = "EC2"

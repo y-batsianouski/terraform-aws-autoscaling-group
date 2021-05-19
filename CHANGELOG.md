@@ -37,3 +37,7 @@
 ## 0.3.1
 
 - Add `aws_autoscaling_lifecycle_hook` resource support
+
+## 0.3.2
+
+- Update README.md
