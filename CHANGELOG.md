@@ -45,3 +45,7 @@
 ## 0.3.3
 
 - FIX `initial_lyfecycle_hook` block in aws_autoscaling_group resource
+
+## 0.3.4
+
+- FIX typo in `aws_autoscaling_lyfecycle_hook` resource

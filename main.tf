@@ -490,11 +490,11 @@ resource "aws_autoscaling_lifecycle_hook" "this" {
   count = length(var.asg_lifecycle_hooks)
 
   autoscaling_group_name = aws_autoscaling_group.this.name
-  name                    = lookup(var.asg_lifecycle_hooks[couint.index], "name", null)
-  default_result          = lookup(var.asg_lifecycle_hooks[couint.index], "default_result", null)
-  heartbeat_timeout       = lookup(var.asg_lifecycle_hooks[couint.index], "heartbeat_timeout", null)
-  lifecycle_transition    = lookup(var.asg_lifecycle_hooks[couint.index], "lifecycle_transition", null)
-  notification_metadata   = lookup(var.asg_lifecycle_hooks[couint.index], "notification_metadata", null)
-  notification_target_arn = lookup(var.asg_lifecycle_hooks[couint.index], "notification_target_arn", null)
-  role_arn                = lookup(var.asg_lifecycle_hooks[couint.index], "role_arn", null)
+  name                    = lookup(var.asg_lifecycle_hooks[count.index], "name", null)
+  default_result          = lookup(var.asg_lifecycle_hooks[count.index], "default_result", null)
+  heartbeat_timeout       = lookup(var.asg_lifecycle_hooks[count.index], "heartbeat_timeout", null)
+  lifecycle_transition    = lookup(var.asg_lifecycle_hooks[count.index], "lifecycle_transition", null)
+  notification_metadata   = lookup(var.asg_lifecycle_hooks[count.index], "notification_metadata", null)
+  notification_target_arn = lookup(var.asg_lifecycle_hooks[count.index], "notification_target_arn", null)
+  role_arn                = lookup(var.asg_lifecycle_hooks[count.index], "role_arn", null)
 }
