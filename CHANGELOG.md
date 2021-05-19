@@ -29,3 +29,7 @@
 ## 0.2.3
 
 - FIX typo in kms_key_id for EBS configuration
+
+## 0.3.0
+
+- Add `asg_` prefix to `subnet_ids` and `initial_lifecycle_hooks` variables

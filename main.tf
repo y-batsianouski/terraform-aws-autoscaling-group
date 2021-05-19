@@ -407,7 +407,7 @@ resource "aws_autoscaling_group" "this" {
   desired_capacity          = var.asg_desired_capacity != -1 ? var.asg_desired_capacity : null
   force_delete              = var.asg_force_delete
   load_balancers            = length(var.asg_load_balancers) > 0 ? var.asg_load_balancers : null
-  vpc_zone_identifier       = var.subnet_ids
+  vpc_zone_identifier       = var.asg_subnet_ids
   target_group_arns         = length(var.asg_target_group_arns) > 0 ? var.asg_target_group_arns : null
   termination_policies      = length(var.asg_termination_policies) > 0 ? var.asg_termination_policies : null
   suspended_processes       = length(var.asg_suspended_processes) > 0 ? var.asg_suspended_processes : null

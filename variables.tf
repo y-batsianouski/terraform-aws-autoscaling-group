@@ -7,11 +7,6 @@ variable "name" {
   type        = string
 }
 
-variable "subnet_ids" {
-  description = "A list of subnet IDs to launch resources in. Subnets automatically determine which availability zones the group will reside"
-  type        = list(string)
-}
-
 variable "tags" {
   description = "Map of tags to add to all created resources"
   type        = map(string)
@@ -289,6 +284,11 @@ variable "asg_name_prefix" {
   default     = ""
 }
 
+variable "asg_subnet_ids" {
+  description = "A list of subnet IDs to launch resources in. Subnets automatically determine which availability zones the group will reside"
+  type        = list(string)
+}
+
 variable "asg_min_size" {
   description = "min size of AutoScaling group"
   type        = number
@@ -439,7 +439,7 @@ variable "asg_mixed_instances_policy" {
   default     = {}
 }
 
-variable "initial_lifecycle_hooks" {
+variable "asg_initial_lifecycle_hooks" {
   description = "One or more Lifecycle Hooks to attach to the autoscaling group before instances are launched"
   type        = list(map(string))
   default     = []
