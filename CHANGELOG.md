@@ -41,3 +41,7 @@
 ## 0.3.2
 
 - Update README.md
+
+## 0.3.3
+
+- FIX `initial_lyfecycle_hook` block in aws_autoscaling_group resource

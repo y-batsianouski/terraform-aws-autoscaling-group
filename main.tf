@@ -464,7 +464,7 @@ resource "aws_autoscaling_group" "this" {
   }
 
   dynamic "initial_lifecycle_hook" {
-    for_each = var.initial_lifecycle_hooks
+    for_each = var.asg_initial_lifecycle_hooks
     content {
       name                    = lookup(initial_lifecycle_hook.value, "name", null)
       default_result          = lookup(initial_lifecycle_hook.value, "default_result", null)
