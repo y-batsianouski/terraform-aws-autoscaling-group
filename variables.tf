@@ -440,7 +440,13 @@ variable "asg_mixed_instances_policy" {
 }
 
 variable "asg_initial_lifecycle_hooks" {
-  description = "One or more Lifecycle Hooks to attach to the autoscaling group before instances are launched"
+  description = "One or more Initial Lifecycle Hooks to attach to the autoscaling group before instances are launched"
+  type        = list(map(string))
+  default     = []
+}
+
+variable "asg_lifecycle_hooks" {
+  description = "One or more Lifecycle Hooks to attach to the autoscaling group using aws_autoscaling_lifecycle_hook resource"
   type        = list(map(string))
   default     = []
 }

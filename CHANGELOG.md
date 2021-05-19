@@ -33,3 +33,7 @@
 ## 0.3.0
 
 - Add `asg_` prefix to `subnet_ids` and `initial_lifecycle_hooks` variables
+
+## 0.3.1
+
+- Add `aws_autoscaling_lifecycle_hook` resource support
