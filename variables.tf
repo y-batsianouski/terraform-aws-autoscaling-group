@@ -451,6 +451,12 @@ variable "asg_lifecycle_hooks" {
   default     = []
 }
 
+variable "asg_scaling_policies" {
+  description = "One or more scaling policies for autoscaling group"
+  type        = any
+  default     = []
+}
+
 variable "asg_tags_propagate_at_launch" {
   description = "Propagate AutoScaling group tags to the launched EC2 instances"
   type        = bool

@@ -12,15 +12,7 @@ locals {
     device_name  = data.aws_ami.this[0].root_device_name,
     virtual_name = lookup(var.lt_root_block_device, "virtual_name", null),
     no_device    = lookup(var.lt_root_block_device, "no_device", null),
-    ebs = data.aws_ami.this[0].root_device_type == "instance-store" ? {} : {
-      delete_on_termination = lookup(var.lt_root_block_device, "delete_on_termination", false),
-      encrypted             = lookup(var.lt_root_block_device, "encrypted", false),
-      iops                  = lookup(var.lt_root_block_device, "iops", null),
-      kms_key_id            = lookup(var.lt_root_block_device, "kms_key_id", null),
-      snapshot_id           = lookup(var.lt_root_block_device, "snapshot_id", null),
-      volume_size           = lookup(var.lt_root_block_device, "volume_size", null),
-      volume_type           = lookup(var.lt_root_block_device, "volume_type", null),
-    }
+    ebs          = var.lt_root_block_device
   }]
 
   lt_block_device_mappings = var.lt_block_device_mappings
@@ -98,6 +90,9 @@ locals {
   }]
 
   asg_tags = [for k, v in merge(var.tags, var.asg_tags) : { key = k, value = v, propagate_at_launch = var.asg_tags_propagate_at_launch }]
+
+  asg_indexes_of_scaling_policies_with_alarms = [for i, v in var.asg_scaling_policies : lookup(v, "cloudwatch_alarm", null) != null ? i : ""]
+  asg_scaling_policies_alarms                 = [for i, v in compact(local.asg_indexes_of_scaling_policies_with_alarms) : { "policy_index" = i, "cloudwatch_alarm" = var.asg_scaling_policies[i]["cloudwatch_alarm"] }]
 }
 
 data "aws_ami" "this" {
@@ -154,8 +149,8 @@ resource "aws_launch_template" "this" {
       dynamic "ebs" {
         for_each = length(keys(lookup(block_device_mappings.value, "ebs", {}))) > 0 ? [lookup(block_device_mappings.value, "ebs", {})] : []
         content {
-          delete_on_termination = contains(keys(ebs.value), "delete_on_termination") ? ebs.value["delete_on_termination"] : true
-          encrypted             = contains(keys(ebs.value), "encrypted") ? ebs.value["encrypted"] : false
+          delete_on_termination = lookup(ebs.value, "delete_on_termination", null)
+          encrypted             = lookup(ebs.value, "encrypted", null)
           iops                  = lookup(ebs.value, "iops", null)
           kms_key_id            = lookup(ebs.value, "kms_key_id", null)
           snapshot_id           = lookup(ebs.value, "snapshot_id", null)
@@ -175,8 +170,8 @@ resource "aws_launch_template" "this" {
       dynamic "ebs" {
         for_each = length(keys(lookup(block_device_mappings.value, "ebs", {}))) > 0 ? [lookup(block_device_mappings.value, "ebs", {})] : []
         content {
-          delete_on_termination = contains(keys(ebs.value), "delete_on_termination") ? ebs.value["delete_on_termination"] : true
-          encrypted             = contains(keys(ebs.value), "encrypted") ? ebs.value["encrypted"] : false
+          delete_on_termination = lookup(ebs.value, "delete_on_termination", null)
+          encrypted             = lookup(ebs.value, "encrypted", null)
           iops                  = lookup(ebs.value, "iops", null)
           kms_key_id            = lookup(ebs.value, "kms_key_id", null)
           snapshot_id           = lookup(ebs.value, "snapshot_id", null)
@@ -325,6 +320,7 @@ resource "aws_launch_template" "this" {
   }
 
   tags = merge(
+    { "Name" = var.lt_name != "" ? var.lt_name : var.name },
     var.tags,
     var.lt_tags
   )
@@ -356,11 +352,11 @@ resource "aws_launch_configuration" "this" {
   dynamic "root_block_device" {
     for_each = length(keys(var.lt_root_block_device)) > 0 ? [var.lt_root_block_device] : []
     content {
-      delete_on_termination = contains(keys(root_block_device.value), "delete_on_termination") ? root_block_device.value["delete_on_termination"] : true
+      delete_on_termination = lookup(root_block_device.value, "delete_on_termination", null)
+      encrypted             = lookup(root_block_device.value, "encrypted", null)
       iops                  = lookup(root_block_device.value, "iops", null)
       volume_size           = lookup(root_block_device.value, "volume_size", null)
       volume_type           = lookup(root_block_device.value, "volume_type", null)
-      encrypted             = contains(keys(root_block_device.value), "encrypted") ? root_block_device.value["encrypted"] : false
     }
   }
 
@@ -368,8 +364,8 @@ resource "aws_launch_configuration" "this" {
     for_each = local.lc_ebs_block_devices
     content {
       device_name           = ebs_block_device.value["device_name"]
-      delete_on_termination = contains(keys(ebs_block_device.value), "delete_on_termination") ? ebs_block_device.value["delete_on_termination"] : true
-      encrypted             = contains(keys(ebs_block_device.value), "encrypted") ? ebs_block_device.value["encrypted"] : false
+      delete_on_termination = lookup(ebs_block_device.value, "delete_on_termination", null)
+      encrypted             = lookup(ebs_block_device.value, "encrypted", null)
       iops                  = lookup(ebs_block_device.value, "iops", null)
       no_device             = lookup(ebs_block_device.value, "no_device", null)
       snapshot_id           = lookup(ebs_block_device.value, "snapshot_id", null)
@@ -422,7 +418,7 @@ resource "aws_autoscaling_group" "this" {
   max_instance_lifetime     = var.asg_max_instance_lifetime != -1 ? var.asg_max_instance_lifetime : null
 
   dynamic "launch_template" {
-    for_each = var.lc_use == false && length(keys(var.asg_mixed_instances_policy)) == 0 ? [local.asg_launch_template] : []
+    for_each = var.lc_use == false && length(keys(var.asg_mixed_instances_policy)) == 0 ? local.asg_launch_template : []
     content {
       id      = lookup(launch_template.value, "id", null)
       name    = lookup(launch_template.value, "name", null)
@@ -489,7 +485,7 @@ resource "aws_autoscaling_group" "this" {
 resource "aws_autoscaling_lifecycle_hook" "this" {
   count = length(var.asg_lifecycle_hooks)
 
-  autoscaling_group_name = aws_autoscaling_group.this.name
+  autoscaling_group_name  = aws_autoscaling_group.this.name
   name                    = lookup(var.asg_lifecycle_hooks[count.index], "name", null)
   default_result          = lookup(var.asg_lifecycle_hooks[count.index], "default_result", null)
   heartbeat_timeout       = lookup(var.asg_lifecycle_hooks[count.index], "heartbeat_timeout", null)
@@ -497,4 +493,165 @@ resource "aws_autoscaling_lifecycle_hook" "this" {
   notification_metadata   = lookup(var.asg_lifecycle_hooks[count.index], "notification_metadata", null)
   notification_target_arn = lookup(var.asg_lifecycle_hooks[count.index], "notification_target_arn", null)
   role_arn                = lookup(var.asg_lifecycle_hooks[count.index], "role_arn", null)
+}
+
+resource "aws_autoscaling_policy" "this" {
+  count = length(var.asg_scaling_policies)
+
+  name                      = lookup(var.asg_scaling_policies[count.index], "name", null)
+  scaling_adjustment        = lookup(var.asg_scaling_policies[count.index], "scaling_adjustment", null)
+  adjustment_type           = lookup(var.asg_scaling_policies[count.index], "adjustment_type", null)
+  cooldown                  = lookup(var.asg_scaling_policies[count.index], "cooldown", null)
+  estimated_instance_warmup = lookup(var.asg_scaling_policies[count.index], "estimated_instance_warmup", null)
+  min_adjustment_magnitude  = lookup(var.asg_scaling_policies[count.index], "min_adjustment_magnitude", null)
+  metric_aggregation_type   = lookup(var.asg_scaling_policies[count.index], "metric_aggregation_type", null)
+  autoscaling_group_name    = aws_autoscaling_group.this.name
+
+  dynamic "step_adjustment" {
+    for_each = lookup(var.asg_scaling_policies[count.index], "step_adjustments", {})
+
+    content {
+      scaling_adjustment          = lookup(step_adjustment.value, "scaling_adjustment", null)
+      metric_interval_lower_bound = lookup(step_adjustment.value, "metric_interval_lower_bound", null)
+      metric_interval_upper_bound = lookup(step_adjustment.value, "metric_interval_upper_bound", null)
+    }
+  }
+
+  dynamic "target_tracking_configuration" {
+    for_each = lookup(var.asg_scaling_policies[count.index], "target_tracking_configuration", {})
+    content {
+      target_value     = lookup(target_tracking_configuration.value, "target_value", null)
+      disable_scale_in = lookup(target_tracking_configuration.value, "disable_scale_in", null)
+
+      dynamic "predefined_metric_specification" {
+        for_each = lookup(target_tracking_configuration.value, "predefined_metric_specification", {})
+        content {
+          predefined_metric_type = lookup(predefined_metric_specification.value, "predefined_metric_type", null)
+          resource_label         = lookup(predefined_metric_specification.value, "resource_label", null)
+        }
+      }
+
+      dynamic "customized_metric_specification" {
+        for_each = lookup(target_tracking_configuration.value, "customized_metric_specification", {})
+        content {
+          metric_name = lookup(customized_metric_specification.value, "metric_name", null)
+          namespace   = lookup(customized_metric_specification.value, "namespace", null)
+          statistic   = lookup(customized_metric_specification.value, "statistic", null)
+          unit        = lookup(customized_metric_specification.value, "unit", null)
+
+          dynamic "metric_dimension" {
+            for_each = lookup(customized_metric_specification.value, "metric_dimension", {})
+            content {
+              name  = lookup(metric_dimension.value, "name", {})
+              value = lookup(metric_dimension.value, "value", {})
+            }
+          }
+        }
+      }
+    }
+  }
+
+  # we're not ready to upgrade to the latest version of AWS provider (3.42.0) right now
+  # dynamic "predictive_scaling_configuration" {
+  #   for_each = lookup(var.asg_scaling_policies[count.index], "predictive_scaling_configuration", {})
+  #   content {
+  #     max_capacity_breach_behavior = lookup(predictive_scaling_configuration.value, "max_capacity_breach_behavior", null)
+  #     max_capacity_buffer          = lookup(predictive_scaling_configuration.value, "max_capacity_buffer", null)
+  #     mode                         = lookup(predictive_scaling_configuration.value, "mode", null)
+  #     scheduling_buffer_time       = lookup(predictive_scaling_configuration.value, "scheduling_buffer_time", null)
+
+  #     dynamic "metric_specification" {
+  #       for_each = lookup(predictive_scaling_configuration.value, "metric_specification", {})
+  #       content {
+  #         dynamic "predefined_load_metric_specification" {
+  #           for_each = lookup(metric_specification.value, "predefined_load_metric_specification", {})
+  #           content {
+  #             predefined_metric_type = lookup(predefined_load_metric_specification.value, "predefined_metric_type", null)
+  #             resource_label         = lookup(predefined_load_metric_specification.value, "resource_label", null)
+  #           }
+  #         }
+
+  #         dynamic "predefined_metric_pair_specification" {
+  #           for_each = lookup(metric_specification.value, "predefined_metric_pair_specification", {})
+  #           content {
+  #             predefined_metric_type = lookup(predefined_metric_pair_specification.value, "predefined_metric_type", null)
+  #             resource_label         = lookup(predefined_metric_pair_specification.value, "resource_label", null)
+  #           }
+  #         }
+
+  #         dynamic "predefined_scaling_metric_specification" {
+  #           for_each = lookup(metric_specification.value, "predefined_scaling_metric_specification", {})
+  #           content {
+  #             predefined_metric_type = lookup(predefined_scaling_metric_specification.value, "predefined_metric_type", null)
+  #             resource_label         = lookup(predefined_scaling_metric_specification.value, "resource_label", null)
+  #           }
+  #         }
+  #       }
+  #     }
+  #   }
+  # }
+}
+
+resource "aws_cloudwatch_metric_alarm" "this" {
+  count = length(local.asg_scaling_policies_alarms)
+
+  alarm_name = lookup(local.asg_scaling_policies_alarms[count.index]["cloudwatch_alarm"], "alarm_name", null)
+  alarm_description = lookup(
+    local.asg_scaling_policies_alarms[count.index]["cloudwatch_alarm"],
+    "alarm_description",
+    "Scaling policy ${lookup(var.asg_scaling_policies[local.asg_scaling_policies_alarms[count.index]["policy_index"]], "name", null)} for AutoScaling group ${var.asg_name != "" ? var.asg_name : var.name}"
+  )
+  alarm_actions   = [aws_autoscaling_policy.this[local.asg_scaling_policies_alarms[count.index]["policy_index"]].arn]
+  actions_enabled = true
+
+  comparison_operator = lookup(local.asg_scaling_policies_alarms[count.index]["cloudwatch_alarm"], "comparison_operator", null)
+  evaluation_periods  = lookup(local.asg_scaling_policies_alarms[count.index]["cloudwatch_alarm"], "evaluation_periods", null)
+  period              = lookup(local.asg_scaling_policies_alarms[count.index]["cloudwatch_alarm"], "period", null)
+  metric_name         = lookup(local.asg_scaling_policies_alarms[count.index]["cloudwatch_alarm"], "metric_name", null)
+  namespace           = lookup(local.asg_scaling_policies_alarms[count.index]["cloudwatch_alarm"], "namespace", null)
+  dimensions = {
+    for k, v in lookup(local.asg_scaling_policies_alarms[count.index]["cloudwatch_alarm"], "dimensions", {}) :
+    k => v == "aws_autoscaling_group.this.name" ? aws_autoscaling_group.this.name : v
+  }
+  statistic           = lookup(local.asg_scaling_policies_alarms[count.index]["cloudwatch_alarm"], "statistic", null)
+  threshold           = lookup(local.asg_scaling_policies_alarms[count.index]["cloudwatch_alarm"], "threshold", null)
+  threshold_metric_id = lookup(local.asg_scaling_policies_alarms[count.index]["cloudwatch_alarm"], "threshold_metric_id", null)
+  datapoints_to_alarm = lookup(local.asg_scaling_policies_alarms[count.index]["cloudwatch_alarm"], "datapoints_to_alarm", null)
+  unit                = lookup(local.asg_scaling_policies_alarms[count.index]["cloudwatch_alarm"], "unit", null)
+  extended_statistic  = lookup(local.asg_scaling_policies_alarms[count.index]["cloudwatch_alarm"], "extended_statistic", null)
+  treat_missing_data  = lookup(local.asg_scaling_policies_alarms[count.index]["cloudwatch_alarm"], "treat_missing_data", null)
+
+  evaluate_low_sample_count_percentiles = lookup(local.asg_scaling_policies_alarms[count.index]["cloudwatch_alarm"], "evaluate_low_sample_count_percentiles", null)
+
+  dynamic "metric_query" {
+    for_each = lookup(local.asg_scaling_policies_alarms[count.index]["cloudwatch_alarm"], "metric_query", {})
+    content {
+      id          = lookup(metric_query.value, "id", null)
+      expression  = lookup(metric_query.value, "expression", null)
+      label       = lookup(metric_query.value, "label", null)
+      return_data = lookup(metric_query.value, "return_data", null)
+
+      dynamic "metric" {
+        for_each = lookup(metric_query.value, "metric", {})
+        content {
+          metric_name = lookup(metric.value, "metric_name", null)
+          namespace   = lookup(metric.value, "namespace", null)
+          period      = lookup(metric.value, "period", null)
+          stat        = lookup(metric.value, "stat", null)
+          unit        = lookup(metric.value, "unit", null)
+          dimensions = lookup(metric.value, "dimensions", null) != null ? {
+            for k, v in lookup(metric.value, "dimensions", {}) :
+            k => v == "aws_autoscaling_group.this.name" ? aws_autoscaling_group.this.name : v
+          } : null
+        }
+      }
+    }
+  }
+
+  tags = merge(
+    var.tags,
+    var.asg_tags,
+    { "Name" = "${lookup(local.asg_scaling_policies_alarms[count.index]["cloudwatch_alarm"], "alarm_name", null)}" },
+    lookup(local.asg_scaling_policies_alarms[count.index]["cloudwatch_alarm"], "tags", {})
+  )
 }

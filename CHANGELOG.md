@@ -49,3 +49,10 @@
 ## 0.3.4
 
 - FIX typo in `aws_autoscaling_lyfecycle_hook` resource
+
+## 0.3.5
+
+- Fix EBS configuration
+- Add Name tag to launch template
+- FIX launch template block for autoscaling group
+- Add support for scaling policies
